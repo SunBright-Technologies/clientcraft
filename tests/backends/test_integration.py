@@ -76,7 +76,7 @@ def sync_backend(
     urllib_backend: UrllibBackend,
 ) -> HttpBackend:
     """Parametrized fixture providing all sync backends."""
-    backends = {
+    backends: dict[str, HttpBackend] = {
         "requests": requests_backend,
         "httpx": httpx_backend,
         "urllib": urllib_backend,
@@ -110,7 +110,7 @@ async def async_backend(
     httpx_async_backend: HttpxAsyncBackend,
 ) -> AsyncHttpBackend:
     """Parametrized fixture providing all async backends."""
-    backends = {
+    backends: dict[str, AsyncHttpBackend] = {
         "aiohttp": aiohttp_backend,
         "httpx_async": httpx_async_backend,
     }

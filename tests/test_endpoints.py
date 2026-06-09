@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, get_origin
+from typing import Annotated, Literal, Protocol, get_origin
 
 import pytest
 
@@ -22,6 +22,18 @@ from clientcraft import (
 from .conftest import CreateUserRequest, DeleteUserRequest, GetUserRequest, User
 
 
+class EndpointFactory(Protocol):
+    """Subscriptable endpoint type (e.g. ``Get``) seen as a runtime factory.
+
+    The endpoint classes build an ``Annotated`` type at runtime via the
+    ``_EndpointTypeMeta`` metaclass. Typing them through this protocol lets the
+    request/response/path arguments flow as *values* (not type expressions),
+    which is what these metaclass tests need.
+    """
+
+    def __getitem__(self, params: tuple[type, type | None, object]) -> object: ...
+
+
 class TestEndpointTypeConstruction:
     """Test endpoint type creation via metaclass."""
 
@@ -38,7 +50,7 @@ class TestEndpointTypeConstruction:
     )
     def test_endpoint_method_and_request_style(
         self,
-        endpoint_cls: type,
+        endpoint_cls: EndpointFactory,
         request_type: type,
         response_type: type | None,
         path: str,
@@ -46,7 +58,7 @@ class TestEndpointTypeConstruction:
         expected_request_style: RequestStyle,
     ) -> None:
         """Endpoint types should have correct HTTP method and request style."""
-        endpoint_type = endpoint_cls[request_type, response_type, Literal[path]]  # type: ignore[misc]
+        endpoint_type = endpoint_cls[request_type, response_type, path]
 
         extracted = extract_endpoint_info(endpoint_type)
         assert extracted is not None
@@ -74,11 +86,15 @@ class TestEndpointTypeConstruction:
         expected_style: ResponseStyle,
     ) -> None:
         """Response style should be inferred from response type."""
-        # Use Delete for None response, Get for others
+        # Use Delete for None response, Get for others. The endpoint classes are
+        # used as runtime factories so ``response_type`` flows as a value.
+        factory: EndpointFactory
         if response_type is None:
-            endpoint_type = Delete[DeleteUserRequest, None, Literal["/users/{user_id}"]]
+            factory = Delete
+            endpoint_type = factory[DeleteUserRequest, None, "/users/{user_id}"]
         else:
-            endpoint_type = Get[GetUserRequest, response_type, Literal["/test"]]  # type: ignore[misc]
+            factory = Get
+            endpoint_type = factory[GetUserRequest, response_type, "/test"]
 
         extracted = extract_endpoint_info(endpoint_type)
         assert extracted is not None
