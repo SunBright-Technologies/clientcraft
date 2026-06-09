@@ -69,9 +69,7 @@ def mock_async_request(async_backend: HttpxAsyncBackend) -> Callable[[MockRespon
         mock_response.content = data.content
         mock_response.headers = httpx.Headers(data.headers or {})
 
-        with patch.object(
-            async_backend._client, "request", new_callable=AsyncMock, return_value=mock_response
-        ) as mock:
+        with patch.object(async_backend._client, "request", new_callable=AsyncMock, return_value=mock_response) as mock:
             yield mock
 
     return _mock
@@ -123,9 +121,7 @@ class TestHttpxAsyncBackendInterface(AsyncBackendInterfaceTests[HttpxAsyncBacken
             yield b
 
     @pytest.fixture
-    def mock_async_request(
-        self, async_backend: HttpxAsyncBackend
-    ) -> Callable[[MockResponseData], Any]:
+    def mock_async_request(self, async_backend: HttpxAsyncBackend) -> Callable[[MockResponseData], Any]:
         """Provide mock request function for HttpxAsyncBackend."""
 
         @contextmanager

@@ -131,8 +131,7 @@ class UrllibBackend:
         """
         if self._closed:
             raise RuntimeError(
-                "UrllibBackend has been closed. Use 'with UrllibBackend()' "
-                "to ensure proper lifecycle management."
+                "UrllibBackend has been closed. Use 'with UrllibBackend()' to ensure proper lifecycle management."
             )
 
         # Build the request

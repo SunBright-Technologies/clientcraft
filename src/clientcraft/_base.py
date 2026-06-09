@@ -97,11 +97,7 @@ def prepare_request(
 
     if endpoint_info.request_style == RequestStyle.QUERY:
         # Add non-path params to query string
-        query_params = {
-            k: serialize_query_value(v)
-            for k, v in request_dict.items()
-            if k not in path_params
-        }
+        query_params = {k: serialize_query_value(v) for k, v in request_dict.items() if k not in path_params}
         if query_params:
             url = f"{url}?{urlencode(query_params)}"
 
@@ -271,6 +267,7 @@ class EndpointDescriptor[ClientT: BaseAPIClient[Any]]:
 #     def parse(self, response: HttpResponse) -> T:
 #         data = response.content
 #         return self.response_type.model_validate(data)
+
 
 @dataclass
 class BaseBoundEndpoint[ClientT: BaseAPIClient[Any]]:

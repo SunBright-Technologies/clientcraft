@@ -45,9 +45,7 @@ def mock_async_request(async_backend: AiohttpBackend) -> Callable[[MockResponseD
         mock_response.read = AsyncMock(return_value=data.content)
         mock_response.headers = data.headers or {}
 
-        with patch.object(
-            async_backend._session, "request", new_callable=MagicMock
-        ) as mock_request_method:
+        with patch.object(async_backend._session, "request", new_callable=MagicMock) as mock_request_method:
             # Create an async context manager mock
             mock_cm = AsyncMock()
             mock_cm.__aenter__ = AsyncMock(return_value=mock_response)
@@ -74,9 +72,7 @@ class TestAiohttpBackendInterface(AsyncBackendInterfaceTests[AiohttpBackend]):
             yield b
 
     @pytest.fixture
-    def mock_async_request(
-        self, async_backend: AiohttpBackend
-    ) -> Callable[[MockResponseData], Any]:
+    def mock_async_request(self, async_backend: AiohttpBackend) -> Callable[[MockResponseData], Any]:
         """Provide mock request function for AiohttpBackend."""
 
         @contextmanager
@@ -86,9 +82,7 @@ class TestAiohttpBackendInterface(AsyncBackendInterfaceTests[AiohttpBackend]):
             mock_response.read = AsyncMock(return_value=data.content)
             mock_response.headers = data.headers or {}
 
-            with patch.object(
-                async_backend._session, "request", new_callable=MagicMock
-            ) as mock_request_method:
+            with patch.object(async_backend._session, "request", new_callable=MagicMock) as mock_request_method:
                 mock_cm = AsyncMock()
                 mock_cm.__aenter__ = AsyncMock(return_value=mock_response)
                 mock_cm.__aexit__ = AsyncMock(return_value=None)

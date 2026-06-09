@@ -32,8 +32,7 @@ try:
     import aiohttp
 except ImportError as e:
     raise ImportError(
-        "aiohttp is required for AiohttpBackend. "
-        "Install it with: pip install aiohttp or uv add 'api-client[aiohttp]'"
+        "aiohttp is required for AiohttpBackend. Install it with: pip install aiohttp or uv add 'api-client[aiohttp]'"
     ) from e
 
 
