@@ -1,7 +1,9 @@
 """
 Integration tests for HTTP backends.
 
-These tests make real HTTP requests to external services (httpbin.org).
+These tests make real HTTP requests to an httpbin server. By default they hit
+the public httpbin.org; set the HTTPBIN_BASE_URL env var to target a self-hosted
+instance (CI runs an httpbin container to avoid public-endpoint flakiness).
 Run with: pytest -m integration
 Skip with: pytest -m "not integration"
 
@@ -12,6 +14,7 @@ consistent behavior regardless of which HTTP library is used.
 from __future__ import annotations
 
 import json
+import os
 from typing import TYPE_CHECKING
 
 import pytest
@@ -39,7 +42,9 @@ pytestmark = [
 # Test Configuration
 # -----------------------------------------------------------------------------
 
-HTTPBIN_BASE_URL = "https://httpbin.org"
+# Defaults to the public httpbin.org for local runs; CI overrides this to point
+# at a self-hosted httpbin container to avoid public-endpoint flakiness.
+HTTPBIN_BASE_URL = os.environ.get("HTTPBIN_BASE_URL", "https://httpbin.org")
 
 
 # -----------------------------------------------------------------------------

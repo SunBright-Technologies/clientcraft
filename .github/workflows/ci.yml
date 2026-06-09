@@ -46,6 +46,16 @@ jobs:
     runs-on: ubuntu-latest
     # Only run on main branch or when explicitly requested
     if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'run-integration')
+    # Self-hosted httpbin avoids the flaky/503-prone public httpbin.org.
+    # Uses the canonical kennethreitz/httpbin image (same one httpbin.org runs),
+    # so response shapes match exactly (e.g. string-valued headers).
+    services:
+      httpbin:
+        image: kennethreitz/httpbin
+        ports:
+          - 8080:80
+    env:
+      HTTPBIN_BASE_URL: http://localhost:8080
     steps:
       - uses: actions/checkout@v6
 
@@ -56,6 +66,19 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --dev
+
+      - name: Wait for httpbin to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf "$HTTPBIN_BASE_URL/status/200" >/dev/null; then
+              echo "httpbin is ready"
+              exit 0
+            fi
+            echo "waiting for httpbin... ($i)"
+            sleep 1
+          done
+          echo "httpbin did not become ready in time"
+          exit 1
 
       - name: Run integration tests
         run: uv run pytest -m integration -n auto --tb=short
