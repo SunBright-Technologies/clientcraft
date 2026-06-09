@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Literal, get_type_hints
 
+from pydantic import BaseModel
+
 from clientcraft import Patch, Put, RequestStyle, extract_endpoint_info
 from clientcraft.client import APIClient
-from pydantic import BaseModel
 
 from .conftest import (
     CreateUserRequest,

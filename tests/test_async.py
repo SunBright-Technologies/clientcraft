@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 from typing import Literal
 
+from pydantic import BaseModel
+
 from clientcraft import AsyncDelete, AsyncGet, AsyncPost
 from clientcraft.async_client import AsyncAPIClient
-from pydantic import BaseModel
 
 from .conftest import (
     AsyncMockBackend,

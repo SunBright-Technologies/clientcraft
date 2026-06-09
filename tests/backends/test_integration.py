@@ -15,6 +15,7 @@ import json
 from typing import TYPE_CHECKING
 
 import pytest
+
 from clientcraft.backends.aiohttp import AiohttpBackend
 from clientcraft.backends.httpx import HttpxAsyncBackend, HttpxBackend
 from clientcraft.backends.requests import RequestsBackend

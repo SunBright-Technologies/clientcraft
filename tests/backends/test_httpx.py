@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
+
 from clientcraft.backends.httpx import HttpxAsyncBackend, HttpxBackend, HttpxResponse
 
 from .conftest import AsyncBackendInterfaceTests, BackendInterfaceTests, MockResponseData

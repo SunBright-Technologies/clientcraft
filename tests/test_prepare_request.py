@@ -6,13 +6,14 @@ import json
 from http import HTTPMethod
 
 import pytest
+from pydantic import BaseModel
+
 from clientcraft import EndpointInfo, RequestStyle, ResponseStyle
 from clientcraft._base import (
     extract_path_params,
     prepare_request,
     serialize_query_value,
 )
-from pydantic import BaseModel
 
 from .conftest import CreateUserRequest, GetUserRequest, SearchRequest
 

@@ -7,10 +7,11 @@ from dataclasses import dataclass
 from typing import Literal
 
 import pytest
+from pydantic import BaseModel
+
 from clientcraft import Delete, Get, Post
 from clientcraft._base import PreparedRequest
 from clientcraft.client import APIClient
-from pydantic import BaseModel
 
 # ---------------------------------------------------------------------------
 # Pytest hooks

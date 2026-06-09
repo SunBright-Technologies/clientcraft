@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError
 
 import pytest
+
 from clientcraft.backends.urllib import UrllibBackend, UrllibResponse
 
 from .conftest import BackendInterfaceTests, MockResponseData

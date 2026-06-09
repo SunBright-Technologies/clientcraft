@@ -5,10 +5,11 @@ from __future__ import annotations
 from typing import Literal
 
 import pytest
+from pydantic import BaseModel
+
 from clientcraft import BytesResponse, Get, ResponseStyle, TextResponse, extract_endpoint_info
 from clientcraft._base import HttpError
 from clientcraft.client import APIClient
-from pydantic import BaseModel
 
 from .conftest import (
     DeleteUserRequest,

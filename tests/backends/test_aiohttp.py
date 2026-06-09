@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from clientcraft.backends.aiohttp import AiohttpBackend, AiohttpResponse
 
 from .conftest import AsyncBackendInterfaceTests, MockResponseData

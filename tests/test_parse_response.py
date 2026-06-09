@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from http import HTTPMethod
 
+from pydantic import BaseModel
+
 from clientcraft import BytesResponse, EndpointInfo, RequestStyle, ResponseStyle, TextResponse
 from clientcraft._base import parse_response
-from pydantic import BaseModel
 
 from .conftest import MockResponse, User
 
