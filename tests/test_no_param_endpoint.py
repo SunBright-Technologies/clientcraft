@@ -42,7 +42,7 @@ class TestNoParamEndpoint:
         hints = get_type_hints(HealthAPI, include_extras=True)
         extracted = extract_endpoint_info(hints["list_users"])
         assert extracted is not None
-        assert extracted.request_type is type(None)
+        assert extracted.request_type is None
 
     def test_call_with_no_argument(self, mock_backend: MockBackend) -> None:
         """Calling with no argument sends no body and no query string."""

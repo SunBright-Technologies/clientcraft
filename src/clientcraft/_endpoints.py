@@ -90,7 +90,7 @@ class _EndpointTypeMeta(type):
         # Return Annotated type with endpoint info
         # Type checkers can't understand runtime type construction - we use .pyi stubs instead
         return Annotated[
-            Endpoint[request_type, response_type],  # type: ignore[valid-type]
+            Endpoint[request_type, response_type],  # type: ignore[valid-type]  # ty:ignore[invalid-type-form]
             EndpointInfo(
                 method=cls._method,
                 path=path,
@@ -180,7 +180,15 @@ def extract_endpoint_info(hint: Any) -> ExtractedEndpoint | None:
 
     request_type, response_type = base_args[0], base_args[1]
 
-    if not isinstance(request_type, type) or not isinstance(response_type, type):
+    # A ``None`` request type (declared as ``Get[None, ...]``) resolves to
+    # ``NoneType`` in the type hints. Normalize it back to ``None`` so callers
+    # can treat "no request" uniformly.
+    if request_type is type(None):
+        request_type = None
+    elif not isinstance(request_type, type):
+        return None
+
+    if not isinstance(response_type, type):
         return None
 
     endpoint_info = next((a for a in annotations if isinstance(a, EndpointInfo)), None)
