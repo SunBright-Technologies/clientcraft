@@ -45,8 +45,12 @@ __all__ = [
 class _AsyncBoundEndpoint(BaseBoundEndpoint["AsyncAPIClient"]):
     """An awaitable endpoint bound to an async client instance."""
 
-    async def __call__(self, request: BaseModel) -> BaseModel | dict[str, Any] | list[Any] | None:
-        """Execute the endpoint call asynchronously."""
+    async def __call__(self, request: BaseModel | None = None) -> BaseModel | dict[str, Any] | list[Any] | None:
+        """Execute the endpoint call asynchronously.
+
+        ``request`` may be ``None`` for endpoints declared with a ``None`` request
+        type (i.e. endpoints that take no parameters at all).
+        """
         prepared = self._prepare(request)
 
         response = await self.client._backend.request(

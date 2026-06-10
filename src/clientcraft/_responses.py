@@ -15,7 +15,7 @@ class TextResponse(BaseModel):
     Wrapper for text responses.
 
     Usage:
-        get_health: Get[EmptyRequest, TextResponse, Literal["/health"]]
+        get_health: Get[None, TextResponse, Literal["/health"]]
     """
 
     content: str
