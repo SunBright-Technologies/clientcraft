@@ -59,9 +59,7 @@ class TestNoParamEndpoint:
 
     def test_call_with_explicit_none(self, mock_backend: MockBackend) -> None:
         """Calling with an explicit None behaves the same as no argument."""
-        mock_backend.response_content = (
-            b'{"users": [{"id": "1", "name": "A", "email": "a@e.com"}]}'
-        )
+        mock_backend.response_content = b'{"users": [{"id": "1", "name": "A", "email": "a@e.com"}]}'
 
         client = HealthAPI(base_url="https://api.example.com", backend=mock_backend)
         result = client.list_users(None)
