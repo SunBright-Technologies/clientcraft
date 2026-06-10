@@ -49,6 +49,6 @@ class EndpointInfo:
 class ExtractedEndpoint:
     """Result of extracting endpoint info from a type hint."""
 
-    request_type: type[BaseModel]
+    request_type: type[BaseModel] | None
     response_type: type[BaseModel] | None
     info: EndpointInfo

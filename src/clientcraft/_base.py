@@ -74,14 +74,15 @@ def serialize_query_value(value: object) -> str:
 
 
 def prepare_request(
-    request: BaseModel,
+    request: BaseModel | None,
     endpoint_info: EndpointInfo,
     path_params: set[str],
     base_url: str,
     default_headers: dict[str, str],
 ) -> PreparedRequest:
     """Build a PreparedRequest from the endpoint info and request data."""
-    request_dict = request.model_dump(exclude_none=True)
+    # A None request means the endpoint takes no parameters at all.
+    request_dict = request.model_dump(exclude_none=True) if request is not None else {}
 
     # Build URL with path interpolation
     url_path = endpoint_info.path
@@ -283,7 +284,7 @@ class BaseBoundEndpoint[ClientT: BaseAPIClient[Any]]:
     path_params: set[str]
     # parse_strategy: ParseStrategy
 
-    def _prepare(self, request: BaseModel) -> PreparedRequest:
+    def _prepare(self, request: BaseModel | None) -> PreparedRequest:
         """Build a PreparedRequest from the endpoint info and request data."""
         return prepare_request(
             request=request,
