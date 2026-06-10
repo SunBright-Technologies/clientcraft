@@ -52,6 +52,9 @@ docs = [
 [project.urls]
 Homepage = "https://github.com/Sunbright-Technologies/clientcraft"
 Repository = "https://github.com/Sunbright-Technologies/clientcraft"
+Documentation = "https://sunbright-technologies.github.io/clientcraft/"
+Changelog = "https://github.com/Sunbright-Technologies/clientcraft/releases"
+Issues = "https://github.com/Sunbright-Technologies/clientcraft/issues"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
