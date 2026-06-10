@@ -51,6 +51,9 @@ dmypy.json
 # ruff
 .ruff_cache/
 
+# MkDocs
+site/
+
 # OS
 .DS_Store
 Thumbs.db
