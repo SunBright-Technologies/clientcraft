@@ -83,9 +83,7 @@ def prepare_request(
 ) -> PreparedRequest:
     """Build a PreparedRequest from the endpoint info and request data."""
     # A None request means the endpoint takes no parameters at all.
-    request_dict = (
-        request.model_dump(mode=model_dump_mode, exclude_none=True) if request is not None else {}
-    )
+    request_dict = request.model_dump(mode=model_dump_mode, exclude_none=True) if request is not None else {}
 
     # Build URL with path interpolation
     url_path = endpoint_info.path
