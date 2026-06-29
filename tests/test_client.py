@@ -177,9 +177,7 @@ class TestModelDumpMode:
         mock_backend.response_content = b'{"id": "1", "name": "Test", "email": "t@e.com"}'
 
         client = EventAPI(base_url="https://api.example.com", backend=mock_backend)
-        client.create_event(
-            CreateEventRequest(name="Launch", starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=UTC))
-        )
+        client.create_event(CreateEventRequest(name="Launch", starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=UTC)))
 
         assert mock_backend.last_request is not None
         assert mock_backend.last_request.content is not None
@@ -195,9 +193,7 @@ class TestModelDumpMode:
         )
 
         with pytest.raises(TypeError):
-            client.create_event(
-                CreateEventRequest(name="Launch", starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=UTC))
-            )
+            client.create_event(CreateEventRequest(name="Launch", starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=UTC)))
 
     def test_uuid_field_json_mode_serializes_python_mode_raises(self, mock_backend: MockBackend) -> None:
         """A UUID body field is encoded in ``json`` mode but rejected in ``python`` mode."""
