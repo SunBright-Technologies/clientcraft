@@ -13,10 +13,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum, auto
 from http import HTTPMethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+
+# How request models are serialized via ``BaseModel.model_dump``.
+# - "json" (client default): coerce values to JSON-compatible types (e.g. datetime -> str)
+# - "python": keep Python-native types (the pydantic default)
+type ModelDumpMode = Literal["python", "json"]
 
 
 class RequestStyle(Enum):

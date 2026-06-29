@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 from ._endpoints import extract_endpoint_info
 from ._responses import BytesResponse, TextResponse
-from ._types import EndpointInfo, RequestStyle, ResponseStyle
+from ._types import EndpointInfo, ModelDumpMode, RequestStyle, ResponseStyle
 from .backends import HttpResponse
 
 # ---------------------------------------------------------------------------
@@ -79,10 +79,13 @@ def prepare_request(
     path_params: set[str],
     base_url: str,
     default_headers: dict[str, str],
+    model_dump_mode: ModelDumpMode = "json",
 ) -> PreparedRequest:
     """Build a PreparedRequest from the endpoint info and request data."""
     # A None request means the endpoint takes no parameters at all.
-    request_dict = request.model_dump(exclude_none=True) if request is not None else {}
+    request_dict = (
+        request.model_dump(mode=model_dump_mode, exclude_none=True) if request is not None else {}
+    )
 
     # Build URL with path interpolation
     url_path = endpoint_info.path
@@ -210,11 +213,13 @@ class BaseAPIClient[Backend]:
         *,
         default_headers: dict[str, str] | None = None,
         default_timeout: float | None = None,
+        model_dump_mode: ModelDumpMode = "json",
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._backend = backend
         self._default_headers = default_headers or {}
         self._default_timeout = default_timeout
+        self._model_dump_mode = model_dump_mode
 
 
 # ---------------------------------------------------------------------------
@@ -292,6 +297,7 @@ class BaseBoundEndpoint[ClientT: BaseAPIClient[Any]]:
             path_params=self.path_params,
             base_url=self.client._base_url,
             default_headers=self.client._default_headers,
+            model_dump_mode=self.client._model_dump_mode,
         )
 
     def _handle_response(self, response: HttpResponse) -> BaseModel | dict[str, Any] | list[Any] | None:
