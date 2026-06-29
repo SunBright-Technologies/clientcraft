@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from http import HTTPMethod
 
 import pytest
@@ -171,6 +172,72 @@ class TestPrepareRequest:
         )
 
         assert "limit" not in prepared.url
+
+
+class TestModelDumpMode:
+    """Test the ``model_dump_mode`` parameter of ``prepare_request``."""
+
+    @staticmethod
+    def _event_request() -> BaseModel:
+        class CreateEventRequest(BaseModel):
+            name: str
+            starts_at: datetime
+
+        return CreateEventRequest(
+            name="Launch",
+            starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=UTC),
+        )
+
+    @staticmethod
+    def _body_endpoint() -> EndpointInfo:
+        return EndpointInfo(
+            method=HTTPMethod.POST,
+            path="/events",
+            request_style=RequestStyle.BODY,
+            response_style=ResponseStyle.JSON,
+        )
+
+    def test_json_mode_serializes_non_json_native_types(self) -> None:
+        """``json`` mode coerces values (e.g. datetime) to JSON-compatible types."""
+        prepared = prepare_request(
+            request=self._event_request(),
+            endpoint_info=self._body_endpoint(),
+            path_params=set(),
+            base_url="https://api.example.com",
+            default_headers={},
+            model_dump_mode="json",
+        )
+
+        assert prepared.content is not None
+        body = json.loads(prepared.content)
+        assert body["name"] == "Launch"
+        assert body["starts_at"] == "2026-06-29T12:00:00Z"
+
+    def test_json_mode_is_the_default(self) -> None:
+        """Omitting ``model_dump_mode`` uses ``json`` mode, so a datetime body encodes."""
+        prepared = prepare_request(
+            request=self._event_request(),
+            endpoint_info=self._body_endpoint(),
+            path_params=set(),
+            base_url="https://api.example.com",
+            default_headers={},
+        )
+
+        assert prepared.content is not None
+        body = json.loads(prepared.content)
+        assert body["starts_at"] == "2026-06-29T12:00:00Z"
+
+    def test_python_mode_cannot_encode_non_json_native_types(self) -> None:
+        """Explicit ``python`` mode leaves a datetime that the JSON body encoder rejects."""
+        with pytest.raises(TypeError):
+            prepare_request(
+                request=self._event_request(),
+                endpoint_info=self._body_endpoint(),
+                path_params=set(),
+                base_url="https://api.example.com",
+                default_headers={},
+                model_dump_mode="python",
+            )
 
 
 class TestSerializeQueryValue:

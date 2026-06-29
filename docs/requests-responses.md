@@ -12,6 +12,31 @@ Each endpoint type fixes a **request style** that decides where non-path fields 
 Requests are dumped with `exclude_none=True`, so optional fields left as `None`
 are omitted from the query string / body entirely.
 
+### Serialization mode
+
+Request models are serialized with Pydantic's `model_dump`. The mode is
+configurable per client via the `model_dump_mode` argument:
+
+| `model_dump_mode` | Behaviour                                                        |
+|-------------------|------------------------------------------------------------------|
+| `"json"` (default) | Coerces values to JSON-compatible types (e.g. `datetime` → ISO string). |
+| `"python"`        | Keeps Python-native values (the Pydantic default).               |
+
+```python
+client = EventAPI(
+    base_url="https://api.example.com",
+    backend=backend,
+    model_dump_mode="python",  # opt out of JSON coercion
+)
+```
+
+The default `"json"` mode means request models that contain types which are not
+natively JSON-serializable — such as `datetime`, `Decimal`, or `UUID` — are
+coerced to their JSON representation before being sent. This matters most for
+JSON bodies: in `"python"` mode those values are left as-is and encoding the
+body raises a `TypeError`. Opt into `"python"` only if a custom backend does its
+own serialization and needs the native values.
+
 ## Response types
 
 The **response model** (the second type parameter) controls how the HTTP

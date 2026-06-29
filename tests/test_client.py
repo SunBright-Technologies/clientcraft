@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import json
+from datetime import UTC, datetime
 from typing import Literal, get_type_hints
+from uuid import UUID, uuid4
 
+import pytest
 from pydantic import BaseModel
 
-from clientcraft import Patch, Put, RequestStyle, extract_endpoint_info
+from clientcraft import Patch, Post, Put, RequestStyle, extract_endpoint_info
 from clientcraft.client import APIClient
 
 from .conftest import (
@@ -41,6 +45,23 @@ class PatchUserRequest(BaseModel):
 
 class UserPatchAPI(APIClient):
     patch_user: Patch[PatchUserRequest, User, Literal["/users/{user_id}"]]
+
+
+class CreateEventRequest(BaseModel):
+    name: str
+    starts_at: datetime
+
+
+class EventAPI(APIClient):
+    create_event: Post[CreateEventRequest, User, Literal["/events"]]
+
+
+class CreateTokenRequest(BaseModel):
+    token_id: UUID
+
+
+class TokenAPI(APIClient):
+    create_token: Post[CreateTokenRequest, User, Literal["/tokens"]]
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +167,56 @@ class TestClientDefaultHeaders:
         assert mock_backend.last_request is not None
         assert mock_backend.last_request.headers["Authorization"] == "Bearer xyz"
         assert mock_backend.last_request.headers["X-Request-Id"] == "req-123"
+
+
+class TestModelDumpMode:
+    """Test the client-level ``model_dump_mode`` option."""
+
+    def test_default_json_mode_serializes_datetime_in_body(self, mock_backend: MockBackend) -> None:
+        """By default (``json`` mode) non-JSON-native types are coerced for the body."""
+        mock_backend.response_content = b'{"id": "1", "name": "Test", "email": "t@e.com"}'
+
+        client = EventAPI(base_url="https://api.example.com", backend=mock_backend)
+        client.create_event(CreateEventRequest(name="Launch", starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=UTC)))
+
+        assert mock_backend.last_request is not None
+        assert mock_backend.last_request.content is not None
+        body = json.loads(mock_backend.last_request.content)
+        assert body["starts_at"] == "2026-06-29T12:00:00Z"
+
+    def test_python_mode_cannot_encode_datetime(self, mock_backend: MockBackend) -> None:
+        """Opting into ``python`` mode leaves a datetime that the JSON body encoder rejects."""
+        client = EventAPI(
+            base_url="https://api.example.com",
+            backend=mock_backend,
+            model_dump_mode="python",
+        )
+
+        with pytest.raises(TypeError):
+            client.create_event(CreateEventRequest(name="Launch", starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=UTC)))
+
+    def test_uuid_field_json_mode_serializes_python_mode_raises(self, mock_backend: MockBackend) -> None:
+        """A UUID body field is encoded in ``json`` mode but rejected in ``python`` mode."""
+        mock_backend.response_content = b'{"id": "1", "name": "Test", "email": "t@e.com"}'
+        token_id = uuid4()
+
+        # Default json mode: UUID is coerced to its string form and encodes fine.
+        json_client = TokenAPI(base_url="https://api.example.com", backend=mock_backend)
+        json_client.create_token(CreateTokenRequest(token_id=token_id))
+
+        assert mock_backend.last_request is not None
+        assert mock_backend.last_request.content is not None
+        body = json.loads(mock_backend.last_request.content)
+        assert body["token_id"] == str(token_id)
+
+        # python mode: UUID stays a UUID object, which json.dumps cannot encode.
+        python_client = TokenAPI(
+            base_url="https://api.example.com",
+            backend=mock_backend,
+            model_dump_mode="python",
+        )
+        with pytest.raises(TypeError):
+            python_client.create_token(CreateTokenRequest(token_id=token_id))
 
 
 class TestPutAndPatchMethods:
