@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal, get_type_hints
 from uuid import UUID, uuid4
 
@@ -178,7 +178,7 @@ class TestModelDumpMode:
 
         client = EventAPI(base_url="https://api.example.com", backend=mock_backend)
         client.create_event(
-            CreateEventRequest(name="Launch", starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=timezone.utc))
+            CreateEventRequest(name="Launch", starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=UTC))
         )
 
         assert mock_backend.last_request is not None
@@ -196,7 +196,7 @@ class TestModelDumpMode:
 
         with pytest.raises(TypeError):
             client.create_event(
-                CreateEventRequest(name="Launch", starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=timezone.utc))
+                CreateEventRequest(name="Launch", starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=UTC))
             )
 
     def test_uuid_field_json_mode_serializes_python_mode_raises(self, mock_backend: MockBackend) -> None:

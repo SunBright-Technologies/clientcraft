@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPMethod
 
 import pytest
@@ -185,7 +185,7 @@ class TestModelDumpMode:
 
         return CreateEventRequest(
             name="Launch",
-            starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=timezone.utc),
+            starts_at=datetime(2026, 6, 29, 12, 0, tzinfo=UTC),
         )
 
     @staticmethod
