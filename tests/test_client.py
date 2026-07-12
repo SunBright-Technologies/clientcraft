@@ -275,6 +275,7 @@ class TestErrorHandling:
         class CustomAPI(UserAPI):
             def handle_error(self, error: HttpError) -> None:
                 if error.status_code == 404:
+                    assert error.endpoint_info is not None
                     raise UserNotFound(error.endpoint_info.path) from error
                 super().handle_error(error)
 
@@ -360,6 +361,7 @@ class TestDomainErrorMapping:
         # carries the original HttpError
         assert exc_info.value.http_error is not None
         assert exc_info.value.http_error.status_code == 404
+        assert exc_info.value.http_error.endpoint_info is not None
         assert exc_info.value.http_error.endpoint_info.path == "/users/{user_id}"
 
     def test_from_http_error_parses_body(self, mock_backend: MockBackend) -> None:
