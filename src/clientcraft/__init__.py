@@ -3,7 +3,7 @@ from __future__ import annotations
 from importlib.metadata import version
 
 # Base utilities (useful for custom backends or extensions)
-from ._base import HttpError, PreparedRequest, prepare_request
+from ._base import DomainError, ErrorMap, HttpError, PreparedRequest, prepare_request
 
 # Endpoint types (sync)
 # Endpoint types (async) - same runtime behavior, different type stubs
@@ -26,7 +26,7 @@ from ._endpoints import (
 from ._responses import BytesResponse, TextResponse
 
 # Core types
-from ._types import EndpointInfo, ExtractedEndpoint, RequestStyle, ResponseStyle
+from ._types import EndpointInfo, ExtractedEndpoint, Raises, RequestStyle, ResponseStyle
 
 # Clients
 from .async_client import AsyncAPIClient
@@ -64,7 +64,10 @@ __all__ = [
     "extract_endpoint_info",
     "prepare_request",
     # Errors
+    "DomainError",
+    "ErrorMap",
     "HttpError",
+    "Raises",
     "PreparedRequest",
     # Clients
     "APIClient",

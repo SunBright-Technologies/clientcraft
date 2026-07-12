@@ -98,3 +98,65 @@ class TestAsyncSupport:
         assert b'"name": "New User"' in async_backend.last_request.content
         assert result is not None
         assert result.name == "New User"
+
+
+def test_async_handle_error_override() -> None:
+    """The async client routes error responses through handle_error too."""
+    from clientcraft.async_client import HttpError
+
+    class UserNotFound(Exception):
+        pass
+
+    class CustomAsyncAPI(AsyncUserAPI):
+        def handle_error(self, error: HttpError) -> None:
+            if error.status_code == 404:
+                raise UserNotFound from error
+            super().handle_error(error)
+
+    backend = AsyncMockBackend()
+    backend.response_status = 404
+    client = CustomAsyncAPI(base_url="https://api.example.com", backend=backend)
+
+    async def do_call() -> None:
+        await client.get_user(GetUserRequest(user_id="123"))
+
+    import pytest
+
+    with pytest.raises(UserNotFound):
+        asyncio.run(do_call())
+
+
+# ---------------------------------------------------------------------------
+# Declarative domain-error mapping (async)
+# ---------------------------------------------------------------------------
+
+from typing import Annotated  # noqa: E402
+
+from clientcraft import DomainError, Raises  # noqa: E402
+
+
+class AsyncUserNotFound(DomainError):
+    pass
+
+
+class AsyncMappedAPI(AsyncUserAPI):
+    get_user: Annotated[
+        AsyncGet[GetUserRequest, User, Literal["/users/{user_id}"]],
+        Raises(404, AsyncUserNotFound),
+    ]
+
+
+def test_async_declarative_mapping() -> None:
+    import pytest
+
+    backend = AsyncMockBackend()
+    backend.response_status = 404
+    client = AsyncMappedAPI(base_url="https://api.example.com", backend=backend)
+
+    async def do_call() -> None:
+        await client.get_user(GetUserRequest(user_id="123"))
+
+    with pytest.raises(AsyncUserNotFound) as exc_info:
+        asyncio.run(do_call())
+    assert exc_info.value.http_error is not None
+    assert exc_info.value.http_error.status_code == 404

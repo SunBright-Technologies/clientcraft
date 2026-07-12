@@ -3,6 +3,8 @@ from typing import Any, overload
 
 from pydantic import BaseModel
 
+from ._base import DomainError as DomainError
+from ._base import ErrorMap as ErrorMap
 from ._base import HttpError as HttpError
 from ._base import PreparedRequest as PreparedRequest
 from ._base import prepare_request as prepare_request
@@ -10,6 +12,7 @@ from ._responses import BytesResponse as BytesResponse
 from ._responses import TextResponse as TextResponse
 from ._types import EndpointInfo as EndpointInfo
 from ._types import ExtractedEndpoint as ExtractedEndpoint
+from ._types import Raises as Raises
 from ._types import RequestStyle as RequestStyle
 from ._types import ResponseStyle as ResponseStyle
 from .async_client import AsyncAPIClient as AsyncAPIClient

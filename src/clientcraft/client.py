@@ -25,7 +25,9 @@ from pydantic import BaseModel
 from ._base import (
     BaseAPIClient,
     BaseBoundEndpoint,
+    DomainError,
     EndpointDescriptor,
+    ErrorMap,
     HttpError,
     PreparedRequest,
 )
@@ -33,6 +35,8 @@ from .backends import HttpBackend, HttpResponse
 
 __all__ = [
     "APIClient",
+    "DomainError",
+    "ErrorMap",
     "HttpBackend",
     "HttpError",
     "HttpResponse",
@@ -73,6 +77,7 @@ class _SyncEndpointDescriptor(EndpointDescriptor["APIClient"]):
             endpoint_info=self.endpoint_info,
             response_type=self.response_type,
             path_params=self.path_params,
+            error_map=self.error_map,
         )
 
 
