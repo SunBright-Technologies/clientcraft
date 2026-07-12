@@ -26,7 +26,7 @@ from ._endpoints import (
 from ._responses import BytesResponse, TextResponse
 
 # Core types
-from ._types import EndpointInfo, ExtractedEndpoint, Raises, RequestStyle, ResponseStyle
+from ._types import DEFAULT, EndpointInfo, ExtractedEndpoint, Raises, RequestStyle, ResponseStyle
 
 # Clients
 from .async_client import AsyncAPIClient
@@ -64,6 +64,7 @@ __all__ = [
     "extract_endpoint_info",
     "prepare_request",
     # Errors
+    "DEFAULT",
     "DomainError",
     "ErrorMap",
     "HttpError",

@@ -52,6 +52,22 @@ class EndpointInfo:
     response_style: ResponseStyle
 
 
+class _DefaultStatus:
+    """Sentinel type for the catch-all key in an error mapping."""
+
+    def __repr__(self) -> str:
+        return "DEFAULT"
+
+
+#: Catch-all key for error mappings: matches any error status not mapped to an
+#: exact status code. Usable both per-endpoint (``Raises(DEFAULT, exc)``) and
+#: client-wide (``ErrorMap({404: X, DEFAULT: exc})``).
+DEFAULT = _DefaultStatus()
+
+#: A key in an error mapping: an exact HTTP status code, or ``DEFAULT`` catch-all.
+type StatusKey = int | _DefaultStatus
+
+
 @dataclass(frozen=True)
 class Raises:
     """Declarative per-endpoint error mapping.
@@ -62,13 +78,15 @@ class Raises:
         get_user: Annotated[
             Get[GetUserRequest, User, Literal["/users/{user_id}"]],
             Raises(404, UserNotFound),
+            Raises(DEFAULT, ApiError),   # catch-all for any other error status
         ]
 
-    Multiple ``Raises(...)`` items may be listed; each maps one status code.
-    Python flattens the nested ``Annotated``, so they are collected together.
+    Multiple ``Raises(...)`` items may be listed; each maps one status code (or
+    ``DEFAULT``). Python flattens the nested ``Annotated``, so they are collected
+    together.
     """
 
-    status: int
+    status: StatusKey
     exc: type[DomainError]
 
 
@@ -79,4 +97,4 @@ class ExtractedEndpoint:
     request_type: type[BaseModel] | None
     response_type: type[BaseModel] | None
     info: EndpointInfo
-    error_map: dict[int, type[DomainError]] = field(default_factory=dict)
+    error_map: dict[StatusKey, type[DomainError]] = field(default_factory=dict)

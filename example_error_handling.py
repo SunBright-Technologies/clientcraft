@@ -6,15 +6,17 @@ Shows how to translate raw HTTP errors into your own *domain* exceptions
 declaratively — so callers catch meaningful errors (``PokemonNotFound``) instead
 of inspecting status codes at every call site.
 
-Three layers, all opt-in (a client that declares none behaves exactly as before,
+Four ideas, all opt-in (a client that declares none behaves exactly as before,
 raising ``HttpError`` on any status >= 400):
 
   1. Per-endpoint mapping via ``Raises(status, ExcType)`` in the annotation.
   2. Client-wide mapping via the ``errors`` class attribute.
-  3. Body-aware construction by overriding ``DomainError.from_http_error``.
+  3. A ``DEFAULT`` catch-all key for any status without an exact mapping.
+  4. Body-aware construction by overriding ``DomainError.from_http_error``.
 
-Runs against the live PokeAPI (https://pokeapi.co/), which returns a real 404 for
-an unknown Pokemon. Uses the dependency-free urllib backend.
+Runs against the live PokeAPI (https://pokeapi.co/): a real 404 for an unknown
+Pokemon, and a real 403 (Cloudflare) when the urllib user-agent is not set, which
+the ``DEFAULT`` catch-all turns into ``PokeAPIError``. Dependency-free backend.
 
 Run with:
     uv run python example_error_handling.py
@@ -26,7 +28,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel
 
-from clientcraft import DomainError, ErrorMap, Get, HttpError, Raises
+from clientcraft import DEFAULT, DomainError, ErrorMap, Get, HttpError, Raises
 from clientcraft.backends.urllib import UrllibBackend
 from clientcraft.client import APIClient
 
@@ -43,8 +45,8 @@ class PokemonNotFound(DomainError):
     """
 
 
-class PokeAPIServerError(DomainError):
-    """Raised for any 5xx from the PokeAPI.
+class PokeAPIError(DomainError):
+    """Catch-all for any other PokeAPI error (not a 404).
 
     Overrides ``from_http_error`` to build a friendlier message from the response
     body — the imperative "read the body" logic lives on the exception, where it
@@ -86,9 +88,11 @@ class Pokemon(BaseModel):
 class PokeAPIClient(APIClient):
     """Tiny PokeAPI client with domain-error translation.
 
-    - ``get_pokemon`` maps 404 -> ``PokemonNotFound`` (per-endpoint ``Raises``).
-    - The client-wide ``errors`` map turns any 5xx into ``PokeAPIServerError``.
-    - Anything unmapped falls through to the default ``HttpError``.
+    - ``get_pokemon`` maps 404 -> ``PokemonNotFound`` (per-endpoint exact ``Raises``).
+    - The client-wide ``errors`` map uses the ``DEFAULT`` catch-all: any error
+      status without an exact mapping becomes ``PokeAPIError``.
+    - Exact status always wins over ``DEFAULT``, so a 404 is still a
+      ``PokemonNotFound``.
     """
 
     get_pokemon: Annotated[
@@ -96,13 +100,8 @@ class PokeAPIClient(APIClient):
         Raises(404, PokemonNotFound),
     ]
 
-    errors = ErrorMap(
-        {
-            500: PokeAPIServerError,
-            502: PokeAPIServerError,
-            503: PokeAPIServerError,
-        }
-    )
+    # DEFAULT catches everything else (403, 5xx, ...) across all endpoints.
+    errors = ErrorMap({DEFAULT: PokeAPIError})
 
 
 # ---------------------------------------------------------------------------
@@ -140,6 +139,19 @@ def main() -> None:
             # Note: PokemonNotFound is a DomainError, NOT an HttpError — the raw
             # HTTP error was translated away before it reached the caller.
             assert not isinstance(err, HttpError)
+
+    # 3. Catch-all — a non-404 error (403 from Cloudflare, since this client omits
+    #    the user-agent) resolves via the DEFAULT key, not the exact 404 mapping.
+    with UrllibBackend() as banned_backend:
+        banned = PokeAPIClient(base_url="https://pokeapi.co/api/v2", backend=banned_backend)
+        try:
+            banned.get_pokemon(GetPokemonRequest(name="pikachu"))
+        except PokemonNotFound:
+            print("\n(skipped catch-all demo: server did not return a non-404 error)")
+        except PokeAPIError as err:
+            assert err.http_error is not None
+            print(f"\n✅ Caught catch-all PokeAPIError via DEFAULT (status {err.http_error.status_code}):")
+            print(f"   {err.message}")
 
     print("\n" + "=" * 60)
     print("Done.")

@@ -10,6 +10,7 @@ from ._base import PreparedRequest as PreparedRequest
 from ._base import prepare_request as prepare_request
 from ._responses import BytesResponse as BytesResponse
 from ._responses import TextResponse as TextResponse
+from ._types import DEFAULT as DEFAULT
 from ._types import EndpointInfo as EndpointInfo
 from ._types import ExtractedEndpoint as ExtractedEndpoint
 from ._types import Raises as Raises
