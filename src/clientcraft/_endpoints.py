@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Literal, get_args, get_origin
 from pydantic import BaseModel
 
 from ._responses import BytesResponse, TextResponse
-from ._types import EndpointInfo, ExtractedEndpoint, Raises, RequestStyle, ResponseStyle
+from ._types import EndpointInfo, ExtractedEndpoint, Raises, RequestStyle, ResponseStyle, StatusKey
 
 if TYPE_CHECKING:
     from ._base import DomainError
@@ -200,7 +200,7 @@ def extract_endpoint_info(hint: Any) -> ExtractedEndpoint | None:
 
     # Collect declarative per-endpoint error mappings (Raises metadata). Nested
     # Annotated flattens, so multiple Raises(...) items arrive in this same list.
-    error_map: dict[int, type[DomainError]] = {}
+    error_map: dict[StatusKey, type[DomainError]] = {}
     for a in annotations:
         if isinstance(a, Raises):
             existing = error_map.get(a.status)

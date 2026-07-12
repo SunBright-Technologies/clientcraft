@@ -100,6 +100,27 @@ You can list several `Raises(...)` items for one endpoint — Python flattens th
 nested `Annotated`, so each maps one status. Declaring the same status twice on
 one endpoint is rejected at class-definition time.
 
+Use the `DEFAULT` key as a **catch-all** for any error status without an exact
+mapping — both per-endpoint and client-wide:
+
+```python
+from clientcraft import DEFAULT
+
+class UserAPI(APIClient):
+    get_user: Annotated[
+        Get[GetUserRequest, User, Literal["/users/{user_id}"]],
+        Raises(404, UserNotFound),
+        Raises(DEFAULT, ApiError),          # any other error on this endpoint
+    ]
+
+    errors = ErrorMap({429: RateLimited, DEFAULT: ApiError})   # client-wide fallback
+```
+
+An exact status always wins over `DEFAULT`; within the same specificity, a
+per-endpoint mapping wins over the client-wide one. Full order:
+**per-endpoint exact → client exact → per-endpoint `DEFAULT` → client `DEFAULT`**,
+then `handle_error`.
+
 Callers now catch *domain* errors:
 
 ```python
@@ -162,9 +183,9 @@ class UserAPI(APIClient):
     case you don't explicitly handle.
 
 !!! tip "Resolution order"
-    On a `>= 400` response: per-endpoint `Raises` → client `errors` map →
-    `handle_error` (whose default raises `HttpError`). All of it works
-    identically for `AsyncAPIClient`.
+    On a `>= 400` response: per-endpoint exact `Raises` → client exact `errors` →
+    per-endpoint `DEFAULT` → client `DEFAULT` → `handle_error` (whose default
+    raises `HttpError`). All of it works identically for `AsyncAPIClient`.
 
 See [`example_error_handling.py`](https://github.com/SunBright-Technologies/clientcraft/blob/main/example_error_handling.py)
 for a complete runnable example against a live API.

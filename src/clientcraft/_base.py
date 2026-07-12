@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 from ._endpoints import extract_endpoint_info
 from ._responses import BytesResponse, TextResponse
-from ._types import EndpointInfo, ModelDumpMode, RequestStyle, ResponseStyle
+from ._types import DEFAULT, EndpointInfo, ModelDumpMode, RequestStyle, ResponseStyle, StatusKey
 from .backends import HttpResponse
 
 # An immutable status-code -> DomainError mapping. Using a read-only mapping (not a
@@ -236,7 +236,7 @@ class BaseAPIClient[Backend]:
     #     errors = ErrorMap({429: RateLimited, 500: ServerError})
     #
     # ``ErrorMap`` is a read-only mapping, so the declaration stays immutable.
-    errors: Mapping[int, type[DomainError]] = MappingProxyType({})
+    errors: Mapping[StatusKey, type[DomainError]] = MappingProxyType({})
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """Process Annotated type hints and create endpoint descriptors."""
@@ -321,7 +321,7 @@ class EndpointDescriptor[ClientT: BaseAPIClient[Any]]:
     endpoint_info: EndpointInfo
     request_type: type[BaseModel] | None
     response_type: type[BaseModel] | None
-    error_map: dict[int, type[DomainError]] = field(default_factory=dict)
+    error_map: dict[StatusKey, type[DomainError]] = field(default_factory=dict)
     path_params: set[str] = field(init=False)
 
     def __post_init__(self) -> None:
@@ -370,7 +370,7 @@ class BaseBoundEndpoint[ClientT: BaseAPIClient[Any]]:
     endpoint_info: EndpointInfo
     response_type: type[BaseModel] | None
     path_params: set[str]
-    error_map: dict[int, type[DomainError]] = field(default_factory=dict)
+    error_map: dict[StatusKey, type[DomainError]] = field(default_factory=dict)
     # parse_strategy: ParseStrategy
 
     def _prepare(self, request: BaseModel | None) -> PreparedRequest:
@@ -387,11 +387,18 @@ class BaseBoundEndpoint[ClientT: BaseAPIClient[Any]]:
     def _resolve_domain_error(self, error: HttpError) -> DomainError | None:
         """Resolve a declarative domain error for this status code, if any.
 
-        Per-endpoint ``Raises`` mappings take precedence over the client-wide
-        ``errors`` mapping. Returns ``None`` when nothing matches, leaving the
-        error to ``handle_error``.
+        Resolution order, most specific first: an exact-status mapping beats a
+        ``DEFAULT`` catch-all, and within the same specificity a per-endpoint
+        ``Raises`` beats the client-wide ``errors`` mapping. Returns ``None`` when
+        nothing matches, leaving the error to ``handle_error``.
         """
-        exc_type = self.error_map.get(error.status_code) or self.client.errors.get(error.status_code)
+        status = error.status_code
+        exc_type = (
+            self.error_map.get(status)
+            or self.client.errors.get(status)
+            or self.error_map.get(DEFAULT)
+            or self.client.errors.get(DEFAULT)
+        )
         if exc_type is None:
             return None
         return exc_type.from_http_error(error)
