@@ -13,12 +13,15 @@ The type stubs (.pyi files) tell type checkers what the return types are:
 from __future__ import annotations
 
 from http import HTTPMethod
-from typing import Annotated, Any, Literal, get_args, get_origin
+from typing import TYPE_CHECKING, Annotated, Any, Literal, get_args, get_origin
 
 from pydantic import BaseModel
 
 from ._responses import BytesResponse, TextResponse
-from ._types import EndpointInfo, ExtractedEndpoint, RequestStyle, ResponseStyle
+from ._types import EndpointInfo, ExtractedEndpoint, Raises, RequestStyle, ResponseStyle
+
+if TYPE_CHECKING:
+    from ._base import DomainError
 
 
 def _get_response_style(response_type: type | None) -> ResponseStyle:
@@ -195,8 +198,22 @@ def extract_endpoint_info(hint: Any) -> ExtractedEndpoint | None:
     if endpoint_info is None:
         return None
 
+    # Collect declarative per-endpoint error mappings (Raises metadata). Nested
+    # Annotated flattens, so multiple Raises(...) items arrive in this same list.
+    error_map: dict[int, type[DomainError]] = {}
+    for a in annotations:
+        if isinstance(a, Raises):
+            existing = error_map.get(a.status)
+            if existing is not None:
+                raise TypeError(
+                    f"Conflicting Raises for status {a.status} on endpoint {endpoint_info.path}: "
+                    f"{existing.__name__} and {a.exc.__name__}. Each status code may map to only one exception."
+                )
+            error_map[a.status] = a.exc
+
     return ExtractedEndpoint(
         request_type=request_type,
         response_type=response_type,
         info=endpoint_info,
+        error_map=error_map,
     )

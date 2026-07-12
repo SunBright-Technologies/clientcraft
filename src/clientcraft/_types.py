@@ -10,13 +10,15 @@ This module contains the fundamental types used to describe endpoints:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from http import HTTPMethod
 from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+
+    from ._base import DomainError
 
 # How request models are serialized via ``BaseModel.model_dump``.
 # - "json" (client default): coerce values to JSON-compatible types (e.g. datetime -> str)
@@ -51,9 +53,30 @@ class EndpointInfo:
 
 
 @dataclass(frozen=True)
+class Raises:
+    """Declarative per-endpoint error mapping.
+
+    Attached as ``Annotated`` metadata alongside an endpoint declaration to map a
+    status code to a :class:`~clientcraft.DomainError` subclass::
+
+        get_user: Annotated[
+            Get[GetUserRequest, User, Literal["/users/{user_id}"]],
+            Raises(404, UserNotFound),
+        ]
+
+    Multiple ``Raises(...)`` items may be listed; each maps one status code.
+    Python flattens the nested ``Annotated``, so they are collected together.
+    """
+
+    status: int
+    exc: type[DomainError]
+
+
+@dataclass(frozen=True)
 class ExtractedEndpoint:
     """Result of extracting endpoint info from a type hint."""
 
     request_type: type[BaseModel] | None
     response_type: type[BaseModel] | None
     info: EndpointInfo
+    error_map: dict[int, type[DomainError]] = field(default_factory=dict)
