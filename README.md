@@ -16,6 +16,8 @@ endpoint.
 - **Pluggable backends**: urllib (no deps), requests, httpx, aiohttp, or custom
 - **Multiple response types**: JSON, text, bytes, or no content
 - **Parameterless endpoints**: declare `Get[None, ...]` for endpoints that take no request
+- **Declarative error handling**: map HTTP errors to domain exceptions per endpoint or client-wide
+- **Testing helpers**: a fake backend and client stubs to test both sides without the network
 
 ## Installation
 
@@ -165,6 +167,68 @@ class FilesAPI(APIClient):
     delete_user: Delete[DeleteUserRequest, None, Literal["/users/{user_id}"]]
 ```
 
+## Error Handling
+
+By default any response with status `>= 400` raises `HttpError`. Opt into your own
+domain exceptions declaratively — no `try/except` on status codes at every call
+site:
+
+```python
+from typing import Annotated, Literal
+from clientcraft import DEFAULT, DomainError, ErrorMap, Get, Raises
+from clientcraft.client import APIClient
+
+class UserNotFound(DomainError): ...
+class RateLimited(DomainError): ...
+class ApiError(DomainError): ...
+
+class UserAPI(APIClient):
+    get_user: Annotated[
+        Get[GetUserRequest, User, Literal["/users/{user_id}"]],
+        Raises(404, UserNotFound),                    # per-endpoint
+    ]
+    errors = ErrorMap({429: RateLimited, DEFAULT: ApiError})   # client-wide + catch-all
+```
+
+Resolution order: per-endpoint `Raises` → client `errors` → `handle_error`
+(override for full control). An exception needing the response body can parse it in
+`DomainError.from_http_error`. See the
+[error handling guide](https://sunbright-technologies.github.io/clientcraft/error-handling/)
+and [`examples/error_handling.py`](examples/error_handling.py).
+
+## Testing
+
+`clientcraft.testing` fakes either side of the client — no live server needed.
+
+**Test your client** with `FakeBackend`: fake the transport, run the real client
+(serialization, parsing, and error handling all run). Routes are backed by
+`unittest.mock.Mock`s:
+
+```python
+from clientcraft.testing import FakeBackend
+
+backend = FakeBackend()
+with backend.mock_get("/users/1", json={"id": "1", "name": "Ada"}) as m:
+    client = UserAPI(base_url="https://api.example.com", backend=backend)
+    assert client.get_user(GetUserRequest(user_id="1")).name == "Ada"
+    m.assert_called_once()
+```
+
+**Test code that uses your client** with `mock_client`: inject a stubbed client
+whose endpoints are mocks (no backend needed):
+
+```python
+from clientcraft.testing import mock_client, mock_of
+
+client = mock_client(UserAPI, get_user=User(id="1", name="Ada"))
+# inject `client` into your service, exercise it, then:
+mock_of(client, "get_user").assert_called_once_with(GetUserRequest(user_id="1"))
+```
+
+See the [testing guide](https://sunbright-technologies.github.io/clientcraft/testing/)
+and [`examples/testing_your_client.py`](examples/testing_your_client.py) /
+[`examples/testing_your_app.py`](examples/testing_your_app.py).
+
 ## Backends
 
 | Backend             | Module                          | Sync/Async | Extra        |
@@ -178,6 +242,17 @@ class FilesAPI(APIClient):
 Backends are protocol-based — any object implementing the `HttpBackend` /
 `AsyncHttpBackend` protocol works, so you can supply your own.
 
+## Examples
+
+Runnable examples live in [`examples/`](examples/):
+
+| File | Shows |
+| --- | --- |
+| [`basic_usage.py`](examples/basic_usage.py) | A declarative async client against the live PokeAPI |
+| [`error_handling.py`](examples/error_handling.py) | HTTP errors → domain exceptions |
+| [`testing_your_client.py`](examples/testing_your_client.py) | Testing a client with `FakeBackend` |
+| [`testing_your_app.py`](examples/testing_your_app.py) | Testing app code with `mock_client` |
+
 ## Development
 
 ```bash
@@ -189,11 +264,11 @@ uv sync --all-extras
 uv run pytest
 
 # Type checking
-uv run mypy src tests
+uv run mypy src tests examples
 
 # Linting and formatting
-uv run ruff check src tests
-uv run ruff format --check src tests
+uv run ruff check src tests examples
+uv run ruff format --check src tests examples
 ```
 
 ## License

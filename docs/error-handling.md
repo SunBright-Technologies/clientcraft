@@ -187,5 +187,5 @@ class UserAPI(APIClient):
     per-endpoint `DEFAULT` → client `DEFAULT` → `handle_error` (whose default
     raises `HttpError`). All of it works identically for `AsyncAPIClient`.
 
-See [`example_error_handling.py`](https://github.com/SunBright-Technologies/clientcraft/blob/main/example_error_handling.py)
+See [`examples/error_handling.py`](https://github.com/SunBright-Technologies/clientcraft/blob/main/examples/error_handling.py)
 for a complete runnable example against a live API.

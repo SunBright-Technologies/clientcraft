@@ -22,6 +22,9 @@ Implementations (import directly from submodules):
     - AiohttpBackend: from clientcraft.backends.aiohttp import AiohttpBackend
       (requires `aiohttp` package)
 
+For testing, a fake backend lives in its own namespace (not here, since it is not
+a production backend): from clientcraft.testing import FakeBackend / FakeAsyncBackend.
+
 Example usage with urllib (no dependencies):
     from clientcraft.backends.urllib import UrllibBackend
     from clientcraft.client import APIClient
