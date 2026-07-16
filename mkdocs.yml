@@ -42,6 +42,7 @@ nav:
       - Async Clients: async.md
       - Backends: backends.md
       - Error Handling: error-handling.md
+      - Testing: testing.md
       - Custom Backends: custom-backends.md
   - Reference:
       - How It Works: how-it-works.md
