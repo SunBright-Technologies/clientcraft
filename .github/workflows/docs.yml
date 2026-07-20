@@ -1,16 +1,13 @@
 name: Docs
 
-# Builds the MkDocs site and deploys it to GitHub Pages. Runs on every push to
-# main (docs stay current) and whenever a Release is published (guarantees a
-# fresh deploy at release time, alongside the PyPI publish in publish.yml).
+# Builds the MkDocs site and deploys it to GitHub Pages on every push to main.
+# (Not on release: the github-pages environment only permits the main branch, so
+# a tag-triggered deploy is rejected. The merge to main already redeploys docs.)
 # Requires Pages to be enabled for the repo with "GitHub Actions" as the source
 # (Settings -> Pages -> Build and deployment -> Source: GitHub Actions).
 on:
   push:
     branches: [main]
-  # Rebuild + redeploy docs when a GitHub Release is published.
-  release:
-    types: [published]
   # Allow manual runs from the Actions tab.
   workflow_dispatch:
 
